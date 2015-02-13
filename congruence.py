@@ -7,41 +7,43 @@ from collections import Counter
 
 
 class Congruence(object):
-    """
-    Takes
-    """
+    # TODO Docstring
 
-    def __init__(self, alpha_iterable=None):
+    def __init__(self, alpha_iterable=None, reflect=True):
+        self.alpha_iterable = alpha_iterable
+        self._reflect_ = reflect
+        self._congruence_alpha_set_ = None
+
         if alpha_iterable is not None:
             self._mutable_error(alpha_iterable)
             self._unordered_error(alpha_iterable)
-            self.congruence_hash_alpha = self.congruence_hash(alpha_iterable)
-
-        self.alpha_iterable = alpha_iterable
-
+            self._congruence_alpha_set_ = self.make_congruence_set(alpha_iterable)
 
     def __call__(self, beta_iterable, omega_iterable=None):
-        self._unordered_error(beta_iterable)
+
         if self.alpha_iterable is None:
             if omega_iterable is None:
-                print('store β as α if non-mutable, else raise error')
+                # Store β as α if non-mutable, else raises error
                 print(beta_iterable)
                 self._mutable_error(beta_iterable)
                 self._unordered_error(beta_iterable)
                 self.alpha_iterable = beta_iterable
-                self.congruence_hash_alpha = self.congruence_hash(beta_iterable)
+                self._congruence_alpha_set_ = self.make_congruence_set(beta_iterable)
             else:
-                print('Test: β ≅ ω (Accepts Mutables)')
-                return self.congruence_hash(beta_iterable) == self.congruence_hash(omega_iterable)
+                # Test: β ≅ ω (Accepts Mutables)
+                truth = self.make_congruence_set(beta_iterable) == self.make_congruence_set(omega_iterable)
+                return truth
         else:
             if omega_iterable is None:
-                print('Test: α ≅ β')
-                return self.congruence_hash_alpha == self.congruence_hash(beta_iterable)
+                # Test: α ≅ β
+                return self._congruence_alpha_set_ == self.make_congruence_set(beta_iterable)
             else:
+                # Test: α ≅ β ≅ ω
                 self._unordered_error(omega_iterable)
-                print('Test: α ≅ β ≅ ω')
-                return self.congruence_hash_alpha == self.congruence_hash(beta_iterable) \
-                       == self.congruence_hash(omega_iterable)
+                omega_reflected = [i for i in reversed(omega_iterable)]
+                truth = self._congruence_alpha_set_ == self.make_congruence_set(beta_iterable) \
+                    == self.make_congruence_set(omega_iterable)
+                return truth
 
     @staticmethod
     def _mutable_error(iterable_object):
@@ -76,9 +78,17 @@ class Congruence(object):
         if error:
             raise TypeError('Requires an ordered iterable')
 
-    def congruence_hash(self, iterable):
+    def make_congruence_set(self, iterable):
+        iterable_rev = [i for i in reversed(iterable)]
+        index_rev = self.unique_shape_index(iterable_rev)
+
         index = self.unique_shape_index(iterable)
-        return hash(('congruence_hash', self.unique_shape(iterable, index)))
+
+        if self._reflect_:
+            return frozenset(['make_congruence_set', self.unique_shape(iterable, index),
+                              self.unique_shape(iterable_rev, index_rev)])
+        else:
+            return frozenset(['make_congruence_set', self.unique_shape(iterable, index)])
 
     @staticmethod
     def unique_shape(iterable, index):
@@ -91,7 +101,6 @@ class Congruence(object):
 
         return tuple(this)
 
-
     @staticmethod
     def unique_shape_index(iterable_object):
         """
@@ -100,7 +109,7 @@ class Congruence(object):
         """
         length = len(iterable_object)
         if len(set(iterable_object)) == 1:
-            print('Uniform List')
+            # Uniform List
             return 0
 
         def find_unique_place(place_list, level=0, last_least=10000000):
@@ -139,7 +148,7 @@ class Congruence(object):
 
             least_o = max(item_list)
             if least_value > 1:
-                print('least_value > 1 @level {}'.format(level))
+
                 place_list = [i for i in new_object_dict[least_o][1]]
                 if least_value == last_least:
                     # if break check is true and the list is no longer being reduced,
@@ -148,8 +157,15 @@ class Congruence(object):
                         return new_object_dict[least_o][1][0]
                 return find_unique_place(place_list, level+1, least_value)
             else:
-                print('Returns @level {}'.format(level))
                 return new_object_dict[least_o][1][0]
 
         return find_unique_place(range(len(iterable_object)))
 
+    def __hash__(self):
+        return hash(self._congruence_alpha_set_)
+
+    def __eq__(self, other):
+        try:
+            return hash(self) == hash(other)
+        except TypeError:
+            return False
