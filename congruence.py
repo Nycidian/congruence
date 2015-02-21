@@ -58,7 +58,7 @@ class Congruence(object):
                     error = True
 
         if error:
-            raise TypeError('The ordered sequence being stored in Congruence must be immutable')
+            raise TypeError('The sequence being stored in Congruence must be immutable')
 
     @staticmethod
     def _unordered_error(sequence_object):
@@ -78,7 +78,7 @@ class Congruence(object):
             pass
 
         if error:
-            raise TypeError('Requires an ordered sequence')
+            raise TypeError('Requires a sequence')
 
     def reset(self, alpha_sequence=None, reflect=True, cyclic=False):
         self.alpha_sequence = alpha_sequence
