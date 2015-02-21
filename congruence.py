@@ -28,7 +28,6 @@ class Congruence(object):
         elif self.alpha_sequence is None:
             if omega_sequence is None:
                 # Store β as α if non-mutable, else raises error
-                print(beta_sequence)
                 self._mutable_error(beta_sequence)
                 self._unordered_error(beta_sequence)
                 self.alpha_sequence = beta_sequence
@@ -98,6 +97,9 @@ class Congruence(object):
         self.reset(self.alpha_sequence, reflect=self.reflect, cyclic=cyclic)
 
     def make_congruence_set(self, sequence, cyclic=None, reflect=None):
+
+        sequence = tuple(sequence)
+
         if cyclic is None:
             cyclic = self.cyclic
 
@@ -105,6 +107,7 @@ class Congruence(object):
             reflect = self.reflect
 
         sequence_rev = sequence[::-1]
+
 
         if cyclic:
             index_rev = self._unique_shape_index_(sequence_rev)
