@@ -9,41 +9,43 @@ from collections import Counter
 class Congruence(object):
     # TODO Docstring
 
-    def __init__(self, alpha_iterable=None, reflect=True):
+    def __init__(self, alpha_iterable=None, reflect=True, cyclic=False):
         self.alpha_iterable = alpha_iterable
-        self._reflect_ = reflect
-        self._congruence_alpha_set_ = None
+        self.reflect = reflect
+        self.cyclic = cyclic
+        self.congruence_set = None
 
         if alpha_iterable is not None:
             self._mutable_error(alpha_iterable)
             self._unordered_error(alpha_iterable)
-            self._congruence_alpha_set_ = self.make_congruence_set(alpha_iterable)
+            self.congruence_set = self.make_congruence_set(alpha_iterable)
 
-    def __call__(self, beta_iterable, omega_iterable=None):
+    def __call__(self, beta_iterable=None, omega_iterable=None):
 
-        if self.alpha_iterable is None:
+        if beta_iterable is None:
+            self.reset(reflect=self.reflect, cyclic=self.cyclic)
+
+        elif self.alpha_iterable is None:
             if omega_iterable is None:
                 # Store β as α if non-mutable, else raises error
                 print(beta_iterable)
                 self._mutable_error(beta_iterable)
                 self._unordered_error(beta_iterable)
                 self.alpha_iterable = beta_iterable
-                self._congruence_alpha_set_ = self.make_congruence_set(beta_iterable)
+                self.congruence_set = self.make_congruence_set(beta_iterable)
             else:
-                # Test: β ≅ ω (Accepts Mutables)
-                truth = self.make_congruence_set(beta_iterable) == self.make_congruence_set(omega_iterable)
-                return truth
+                # Test: β ≅ ω (accepts mutables)
+                return self.make_congruence_set(beta_iterable) == self.make_congruence_set(omega_iterable)
+
         else:
             if omega_iterable is None:
                 # Test: α ≅ β
-                return self._congruence_alpha_set_ == self.make_congruence_set(beta_iterable)
+                return self.congruence_set == self.make_congruence_set(beta_iterable)
             else:
                 # Test: α ≅ β ≅ ω
                 self._unordered_error(omega_iterable)
-                omega_reflected = [i for i in reversed(omega_iterable)]
-                truth = self._congruence_alpha_set_ == self.make_congruence_set(beta_iterable) \
+                return self.congruence_set == self.make_congruence_set(beta_iterable) \
                     == self.make_congruence_set(omega_iterable)
-                return truth
 
     @staticmethod
     def _mutable_error(iterable_object):
@@ -62,14 +64,14 @@ class Congruence(object):
     def _unordered_error(iterable_object):
         error = False
         try:
-            for i in iterable_object:
-                pass
+            for _ in iterable_object:
+                break
         except TypeError as e:
             for arg in e.args:
                 if "is not iterable" in arg:
                     error = True
         try:
-            for (k, v) in iteritems(iterable_object):
+            for (_, _) in iteritems(iterable_object):
                 error = True
                 break
         except AttributeError:
@@ -78,20 +80,49 @@ class Congruence(object):
         if error:
             raise TypeError('Requires an ordered iterable')
 
-    def make_congruence_set(self, iterable):
-        iterable_rev = [i for i in reversed(iterable)]
-        index_rev = self.unique_shape_index(iterable_rev)
+    def reset(self, alpha_iterable=None, reflect=True, cyclic=False):
+        self.alpha_iterable = alpha_iterable
+        self.reflect = reflect
+        self.cyclic = cyclic
+        self.congruence_set = None
 
-        index = self.unique_shape_index(iterable)
+        if alpha_iterable is not None:
+            self._mutable_error(alpha_iterable)
+            self._unordered_error(alpha_iterable)
+            self.congruence_set = self.make_congruence_set(alpha_iterable)
 
-        if self._reflect_:
-            return frozenset(['make_congruence_set', self.unique_shape(iterable, index),
-                              self.unique_shape(iterable_rev, index_rev)])
+    def set_reflect(self, reflect=False):
+        self.reset(self.alpha_iterable, reflect=reflect, cyclic=self.cyclic)
+
+    def set_cyclic(self, cyclic=True):
+        self.reset(self.alpha_iterable, reflect=self.reflect, cyclic=cyclic)
+
+    def make_congruence_set(self, iterable, cyclic=None, reflect=None):
+        if cyclic is None:
+            cyclic = self.cyclic
+
+        if reflect is None:
+            reflect = self.reflect
+
+        iterable_rev = iterable[::-1]
+
+        if cyclic:
+            index_rev = self._unique_shape_index_(iterable_rev)
+            index = self._unique_shape_index_(iterable)
+
+            if reflect:
+                return frozenset(['make_congruence_set_cyclic', self._unique_shape_(iterable, index),
+                                  self._unique_shape_(iterable_rev, index_rev)])
+            else:
+                return frozenset(['make_congruence_set_cyclic', self._unique_shape_(iterable, index)])
         else:
-            return frozenset(['make_congruence_set', self.unique_shape(iterable, index)])
+            if reflect:
+                return frozenset(['make_congruence_set_linear', iterable, iterable_rev])
+            else:
+                return frozenset(['make_congruence_set_linear', iterable])
 
     @staticmethod
-    def unique_shape(iterable, index):
+    def _unique_shape_(iterable, index):
 
         length = len(iterable)
         this = []
@@ -102,7 +133,7 @@ class Congruence(object):
         return tuple(this)
 
     @staticmethod
-    def unique_shape_index(iterable_object):
+    def _unique_shape_index_(iterable_object):
         """
         :param iterable_object: an ordered iterable object
         :return: An index in the above iterable that is a unique identifier in relation to shape.
@@ -162,10 +193,18 @@ class Congruence(object):
         return find_unique_place(range(len(iterable_object)))
 
     def __hash__(self):
-        return hash(self._congruence_alpha_set_)
+        return hash(self.congruence_set)
 
     def __eq__(self, other):
         try:
             return hash(self) == hash(other)
         except TypeError:
             return False
+
+        return False
+
+    def __str__(self):
+        return '<{} Object: {}>'.format(self.__class__.__name__, hash(self))
+
+    def __repr__(self):
+        return '<{} Object: {}>'.format(self.__class__.__name__, hash(self))
