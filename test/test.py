@@ -8,6 +8,7 @@ from random import choice, randint
 '''
 calls different sequences
 test errors
+test time taken?
 '''
 
 class TestNone(unittest.TestCase):
@@ -18,12 +19,6 @@ class TestNone(unittest.TestCase):
         cls.test_1 = 'bcdea'
         cls.test_2 = 'abcde'
         cls.test_3 = 'edcba'
-
-        cls.test_4 = 'aaaaa'
-
-        cls.test_5 = 1, 2, 3, 4, 5, 6
-        cls.test_6 = 3, 4, 5, 6, 1, 2
-        cls.test_7 = 6, 5, 4, 3, 2, 1
 
     def test_none(self):
 
@@ -71,7 +66,7 @@ class TestCyclic(unittest.TestCase):
         numbers = list(range(0, 100, 1))
         cls.alpha_numeric = let + numbers
 
-    def test(self):
+    def test_random(self):
 
         for _ in self.alpha_numeric:
 
